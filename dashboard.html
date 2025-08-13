@@ -8,19 +8,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .header { background: linear-gradient(135deg, #333 0%, #000 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
         .header h1 { font-size: 2.5em; margin-bottom: 10px; }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .stat-card h3 { color: #333; margin-bottom: 10px; }
-        .stat-card .number { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-card .number { font-size: 2em; font-weight: bold; color: #333; }
         .section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .section h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .section h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
-        .btn { background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
-        .btn:hover { background: #5a6fd8; }
+        .btn { background: #333; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+        .btn:hover { background: #000; }
         .btn-danger { background: #e74c3c; }
         .btn-danger:hover { background: #c0392b; }
         .btn-success { background: #27ae60; }
@@ -33,21 +33,21 @@
         .status-error { color: #e74c3c; font-weight: bold; }
         .tabs { display: flex; margin-bottom: 20px; }
         .tab { padding: 10px 20px; background: #f8f9fa; border: none; cursor: pointer; border-radius: 5px 5px 0 0; margin-right: 5px; }
-        .tab.active { background: #667eea; color: white; }
+        .tab.active { background: #333; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .alert { padding: 15px; border-radius: 5px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .loading { display: none; text-align: center; padding: 20px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #333; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎵 TikTok Orchestrator</h1>
+            <h1>TikTok Orchestrator</h1>
             <p>Phone Farm Management Dashboard</p>
         </div>
 
@@ -79,7 +79,7 @@
 
         <div id="accounts" class="tab-content active">
             <div class="section">
-                <h2>🎯 TikTok Hesabı Oluştur</h2>
+                <h2>TikTok Hesabı Oluştur</h2>
                 <form id="accountForm">
                     <div class="form-group">
                         <label>Kullanıcı Adı:</label>
@@ -110,7 +110,7 @@
                             <option value="gaming">Gaming</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn">🚀 TikTok Hesabı Oluştur</button>
+                    <button type="submit" class="btn">TikTok Hesabı Oluştur</button>
                 </form>
                 <div id="accountLoading" class="loading">
                     <div class="spinner"></div>
@@ -119,14 +119,14 @@
             </div>
 
             <div class="section">
-                <h2>📋 Hesap Listesi</h2>
+                <h2>Hesap Listesi</h2>
                 <div id="accountsList"></div>
             </div>
         </div>
 
         <div id="content" class="tab-content">
             <div class="section">
-                <h2>📹 Video Paylaş</h2>
+                <h2>Video Paylaş</h2>
                 <form id="contentForm">
                     <div class="form-group">
                         <label>Hesap Seç:</label>
@@ -148,7 +148,7 @@
                         <label>Hashtag'ler:</label>
                         <input type="text" id="hashtags" placeholder="#trending #viral #fun">
                     </div>
-                    <button type="submit" class="btn">📤 TikTok'a Yükle</button>
+                    <button type="submit" class="btn">TikTok'a Yükle</button>
                 </form>
                 <div id="contentLoading" class="loading">
                     <div class="spinner"></div>
@@ -157,21 +157,21 @@
             </div>
 
             <div class="section">
-                <h2>📋 İçerik Kuyruğu</h2>
+                <h2>İçerik Kuyruğu</h2>
                 <div id="contentList"></div>
             </div>
         </div>
 
         <div id="automation" class="tab-content">
             <div class="section">
-                <h2>🤖 Otomasyon Kontrolleri</h2>
+                <h2>Otomasyon Kontrolleri</h2>
                 <div class="form-group">
                     <label>Hesap Seç:</label>
                     <select id="automationAccount"></select>
                 </div>
-                <button onclick="startWarmup()" class="btn btn-success">🔥 Warm-up Başlat</button>
-                <button onclick="startPosting()" class="btn btn-success">📤 Otomatik Paylaşım</button>
-                <button onclick="startEngagement()" class="btn btn-success">❤️ Etkileşim Başlat</button>
+                <button onclick="startWarmup()" class="btn btn-success">Warm-up Başlat</button>
+                <button onclick="startPosting()" class="btn btn-success">Otomatik Paylaşım</button>
+                <button onclick="startEngagement()" class="btn btn-success">Etkileşim Başlat</button>
                 <div id="automationLoading" class="loading">
                     <div class="spinner"></div>
                     <p>Otomasyon çalışıyor...</p>
@@ -179,14 +179,14 @@
             </div>
 
             <div class="section">
-                <h2>📊 Aktif Görevler</h2>
+                <h2>Aktif Görevler</h2>
                 <div id="tasksList"></div>
             </div>
         </div>
 
         <div id="analytics" class="tab-content">
             <div class="section">
-                <h2>📈 Performans Analizi</h2>
+                <h2>Performans Analizi</h2>
                 <div id="analyticsContent">
                     <p>Analitik veriler burada görüntülenecek...</p>
                 </div>
@@ -197,9 +197,22 @@
     <script>
         // Tab switching
         function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
             document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
             event.target.classList.add('active');
         }
 
@@ -239,15 +252,15 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('🎉 TikTok hesabı başarıyla oluşturuldu!', 'success');
+                    showAlert('TikTok hesabı başarıyla oluşturuldu!', 'success');
                     document.getElementById('accountForm').reset();
                     loadAccounts();
                     updateStats();
                 } else {
-                    showAlert('❌ Hesap oluşturulurken hata: ' + result.message, 'error');
+                    showAlert('Hesap oluşturulurken hata: ' + result.message, 'error');
                 }
             } catch (error) {
-                showAlert('❌ Bağlantı hatası!', 'error');
+                showAlert('Bağlantı hatası!', 'error');
             } finally {
                 loading.style.display = 'none';
                 submitBtn.disabled = false;
@@ -280,15 +293,15 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('🎉 Video başarıyla TikTok\'a yüklendi!', 'success');
+                    showAlert('Video başarıyla TikTok\'a yüklendi!', 'success');
                     document.getElementById('contentForm').reset();
                     loadContent();
                     updateStats();
                 } else {
-                    showAlert('❌ Video yüklenirken hata: ' + result.message, 'error');
+                    showAlert('Video yüklenirken hata: ' + result.message, 'error');
                 }
             } catch (error) {
-                showAlert('❌ Bağlantı hatası!', 'error');
+                showAlert('Bağlantı hatası!', 'error');
             } finally {
                 loading.style.display = 'none';
                 submitBtn.disabled = false;
@@ -323,8 +336,8 @@
                             <td>\${account.risk_score}</td>
                             <td>\${new Date(account.last_activity).toLocaleString('tr-TR')}</td>
                             <td>
-                                <button onclick="testLogin(\${account.id})" class="btn btn-success">🔐 Test</button>
-                                <button onclick="deleteAccount(\${account.id})" class="btn btn-danger">🗑️ Sil</button>
+                                <button onclick="testLogin(\${account.id})" class="btn btn-success">Test</button>
+                                <button onclick="deleteAccount(\${account.id})" class="btn btn-danger">Sil</button>
                             </td>
                         </tr>
                     \`;
@@ -352,13 +365,13 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('✅ Giriş başarılı! Hesap aktif.', 'success');
+                    showAlert('Giriş başarılı! Hesap aktif.', 'success');
                     loadAccounts();
                 } else {
-                    showAlert('❌ Giriş başarısız: ' + result.message, 'error');
+                    showAlert('Giriş başarısız: ' + result.message, 'error');
                 }
             } catch (error) {
-                showAlert('❌ Test sırasında hata!', 'error');
+                showAlert('Test sırasında hata!', 'error');
             }
         }
 
@@ -387,7 +400,7 @@
                             <td>\${item.account_id || 'Atanmamış'}</td>
                             <td>\${new Date(item.created_at).toLocaleString('tr-TR')}</td>
                             <td>
-                                <button onclick="deleteContent(\${item.id})" class="btn btn-danger">🗑️ Sil</button>
+                                <button onclick="deleteContent(\${item.id})" class="btn btn-danger">Sil</button>
                             </td>
                         </tr>
                     \`;
@@ -464,7 +477,7 @@
         async function startWarmup() {
             const accountId = document.getElementById('automationAccount').value;
             if (!accountId) {
-                showAlert('❌ Lütfen bir hesap seçin!', 'error');
+                showAlert('Lütfen bir hesap seçin!', 'error');
                 return;
             }
 
@@ -481,25 +494,25 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('🔥 Warm-up başlatıldı!', 'success');
+                    showAlert('Warm-up başlatıldı!', 'success');
                     loadTasks();
                     updateStats();
                 } else {
-                    showAlert('❌ Warm-up başlatılırken hata: ' + result.message, 'error');
+                    showAlert('Warm-up başlatılırken hata: ' + result.message, 'error');
                 }
             } catch (error) {
-                showAlert('❌ Bağlantı hatası!', 'error');
+                showAlert('Bağlantı hatası!', 'error');
             } finally {
                 loading.style.display = 'none';
             }
         }
 
         async function startPosting() {
-            showAlert('📤 Otomatik paylaşım özelliği yakında eklenecek!', 'success');
+            showAlert('Otomatik paylaşım özelliği yakında eklenecek!', 'success');
         }
 
         async function startEngagement() {
-            showAlert('❤️ Etkileşim özelliği yakında eklenecek!', 'success');
+            showAlert('Etkileşim özelliği yakında eklenecek!', 'success');
         }
 
         // Delete functions
@@ -509,14 +522,14 @@
             try {
                 const response = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
                 if (response.ok) {
-                    showAlert('🗑️ Hesap silindi!', 'success');
+                    showAlert('Hesap silindi!', 'success');
                     loadAccounts();
                     updateStats();
                 } else {
-                    showAlert('❌ Hesap silinirken hata oluştu!', 'error');
+                    showAlert('Hesap silinirken hata oluştu!', 'error');
                 }
             } catch (error) {
-                showAlert('❌ Bağlantı hatası!', 'error');
+                showAlert('Bağlantı hatası!', 'error');
             }
         }
 
@@ -526,27 +539,18 @@
             try {
                 const response = await fetch(`/api/content/${id}`, { method: 'DELETE' });
                 if (response.ok) {
-                    showAlert('🗑️ İçerik silindi!', 'success');
+                    showAlert('İçerik silindi!', 'success');
                     loadContent();
                     updateStats();
                 } else {
-                    showAlert('❌ İçerik silinirken hata oluştu!', 'error');
+                    showAlert('İçerik silinirken hata oluştu!', 'error');
                 }
             } catch (error) {
-                showAlert('❌ Bağlantı hatası!', 'error');
+                showAlert('Bağlantı hatası!', 'error');
             }
         }
 
         // Utility functions
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-            
-            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.stats'));
-            
-            setTimeout(() => alertDiv.remove(), 5000);
-        }
-    </script>
-</body>
-</html>
+            alertDiv.className = `
