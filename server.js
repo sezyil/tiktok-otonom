@@ -9,41 +9,34 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors());
 app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// PostgreSQL Connection
+// Database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Database initialization
-async function initDatabase() {
+// Initialize database tables
+async function initializeDatabase() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS accounts (
         id SERIAL PRIMARY KEY,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        username VARCHAR(255),
-        proxy_ip VARCHAR(50),
-        proxy_port INTEGER,
-        proxy_username VARCHAR(255),
-        proxy_password VARCHAR(255),
-        status VARCHAR(50) DEFAULT 'inactive',
+        username VARCHAR(100) UNIQUE NOT NULL,
+        email VARCHAR(255),
+        password VARCHAR(255),
+        category VARCHAR(100),
+        status VARCHAR(50) DEFAULT 'active',
         risk_score INTEGER DEFAULT 0,
-        followers INTEGER DEFAULT 0,
-        following INTEGER DEFAULT 0,
-        total_likes INTEGER DEFAULT 0,
-        total_views INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -52,13 +45,14 @@ async function initDatabase() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS content_queue (
         id SERIAL PRIMARY KEY,
-        account_id INTEGER REFERENCES accounts(id),
-        video_url VARCHAR(500),
-        caption TEXT,
-        hashtags TEXT,
-        scheduled_time TIMESTAMP,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        video_path VARCHAR(500),
         status VARCHAR(50) DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        account_id INTEGER REFERENCES accounts(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        scheduled_for TIMESTAMP
       )
     `);
 
@@ -66,24 +60,23 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS tasks (
         id SERIAL PRIMARY KEY,
         account_id INTEGER REFERENCES accounts(id),
-        task_type VARCHAR(50),
-        task_data JSONB,
+        task_type VARCHAR(100) NOT NULL,
         status VARCHAR(50) DEFAULT 'pending',
+        data JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         completed_at TIMESTAMP
       )
     `);
 
-    console.log('Database initialized successfully');
+    console.log('Database tables initialized');
   } catch (error) {
     console.error('Database initialization error:', error);
   }
 }
 
-// Puppeteer Browser Manager
-let browser = null;
-
-async function initBrowser() {
+// Initialize Puppeteer
+let browser;
+async function initializePuppeteer() {
   try {
     browser = await puppeteer.launch({
       headless: true,
@@ -94,24 +87,13 @@ async function initBrowser() {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-images',
-        '--disable-javascript',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-field-trial-config',
-        '--disable-ipc-flooding-protection'
+        '--disable-gpu'
       ],
       executablePath: process.env.CHROME_BIN || '/usr/bin/chromium-browser'
     });
-    console.log('Browser initialized successfully');
+    console.log('Puppeteer initialized');
   } catch (error) {
-    console.error('Browser initialization error:', error);
+    console.error('Puppeteer initialization error:', error);
   }
 }
 
@@ -171,11 +153,7 @@ async function warmUpAccount(page) {
 
 // API Routes
 app.get('/', (req, res) => {
-  res.json({
-    message: 'TikTok Orchestrator API',
-    version: '1.0.0',
-    status: 'running'
-  });
+  res.send(dashboardHTML);
 });
 
 // Health check
@@ -329,13 +307,13 @@ cron.schedule('*/30 * * * *', async () => {
 // Initialize and start server
 async function startServer() {
   try {
-    await initDatabase();
-    await initBrowser();
+    await initializeDatabase();
+    await initializePuppeteer();
     
-    app.listen(port, () => {
-      console.log(`🚀 TikTok Orchestrator running on port ${port}`);
-      console.log(`📊 Health check: http://localhost:${port}/health`);
-      console.log(`📋 API docs: http://localhost:${port}/`);
+    app.listen(PORT, () => {
+      console.log(`🚀 TikTok Orchestrator running on port ${PORT}`);
+      console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`📋 API docs: http://localhost:${PORT}/`);
     });
   } catch (error) {
     console.error('Server startup error:', error);
