@@ -87,19 +87,27 @@ async function initializePuppeteer() {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
       ],
       executablePath: process.env.CHROME_BIN || '/usr/bin/chromium-browser'
     });
-    console.log('Puppeteer initialized');
+    console.log('Puppeteer initialized successfully');
   } catch (error) {
     console.error('Puppeteer initialization error:', error);
+    console.log('Continuing without browser automation...');
+    browser = null;
   }
 }
 
 // TikTok Automation Functions
 async function createTikTokAccount(accountData) {
   const { username, email, password, phone, proxy } = accountData;
+  
+  if (!browser) {
+    return { success: false, message: 'Browser automation not available' };
+  }
   
   try {
     const page = await browser.newPage();
@@ -698,9 +706,9 @@ async function startServer() {
     await initializePuppeteer();
     
     app.listen(PORT, () => {
-      console.log(`🚀 TikTok Orchestrator running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`📋 API docs: http://localhost:${PORT}/`);
+      console.log(`TikTok Orchestrator running on port ${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`Dashboard: http://localhost:${PORT}/`);
     });
   } catch (error) {
     console.error('Server startup error:', error);

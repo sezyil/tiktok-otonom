@@ -9,3 +9,6 @@ cmds = ["echo 'Build complete'"]
 
 [start]
 cmd = "node server.js"
+
+[variables]
+CHROME_BIN = "/usr/bin/chromium-browser"
