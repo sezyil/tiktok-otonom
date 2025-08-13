@@ -98,62 +98,312 @@ async function initializePuppeteer() {
 }
 
 // TikTok Automation Functions
-async function tiktokLogin(page, email, password, proxyConfig = null) {
+async function createTikTokAccount(accountData) {
+  const { username, email, password, phone, proxy } = accountData;
+  
   try {
-    if (proxyConfig) {
+    const page = await browser.newPage();
+    
+    // Set proxy if provided
+    if (proxy) {
       await page.authenticate({
-        username: proxyConfig.username,
-        password: proxyConfig.password
+        username: proxy.username,
+        password: proxy.password
       });
     }
-
-    await page.goto('https://www.tiktok.com/login', { waitUntil: 'networkidle2' });
     
-    // Wait for login form and fill credentials
-    await page.waitForSelector('input[name="email"]', { timeout: 10000 });
-    await page.type('input[name="email"]', email);
-    await page.type('input[name="password"]', password);
+    // Set user agent to mobile
+    await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1');
     
-    // Click login button
-    await page.click('button[type="submit"]');
+    // Go to TikTok signup page
+    await page.goto('https://www.tiktok.com/signup', { waitUntil: 'networkidle2' });
     
-    // Wait for navigation
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    // Wait for page to load
+    await page.waitForTimeout(3000);
     
-    return true;
+    // Click on "Sign up with email" option
+    const emailOption = await page.$('[data-e2e="sign-up-email"]');
+    if (emailOption) {
+      await emailOption.click();
+      await page.waitForTimeout(2000);
+    }
+    
+    // Fill in email
+    await page.type('input[placeholder*="email" i]', email);
+    await page.waitForTimeout(1000);
+    
+    // Fill in password
+    await page.type('input[type="password"]', password);
+    await page.waitForTimeout(1000);
+    
+    // Fill in username
+    const usernameInput = await page.$('input[placeholder*="username" i]');
+    if (usernameInput) {
+      await usernameInput.type(username);
+      await page.waitForTimeout(1000);
+    }
+    
+    // Click sign up button
+    const signupButton = await page.$('button[type="submit"]');
+    if (signupButton) {
+      await signupButton.click();
+      await page.waitForTimeout(5000);
+    }
+    
+    // Check for verification requirements
+    const verificationElement = await page.$('[data-e2e="verification-code"]');
+    if (verificationElement) {
+      console.log('Verification required for:', username);
+      await page.close();
+      return { success: false, message: 'Phone verification required', username };
+    }
+    
+    // Check if account created successfully
+    const successIndicator = await page.$('[data-e2e="profile-icon"]');
+    if (successIndicator) {
+      console.log('Account created successfully:', username);
+      await page.close();
+      return { success: true, username };
+    }
+    
+    await page.close();
+    return { success: false, message: 'Unknown error during signup' };
+    
   } catch (error) {
-    console.error('TikTok login error:', error);
-    return false;
+    console.error('Error creating TikTok account:', error);
+    return { success: false, message: error.message };
   }
 }
 
-async function warmUpAccount(page) {
+async function loginTikTokAccount(accountData) {
+  const { username, password, proxy } = accountData;
+  
   try {
-    // Scroll and like random videos for 15-20 minutes
-    for (let i = 0; i < 20; i++) {
-      await page.evaluate(() => window.scrollBy(0, 500));
-      await page.waitForTimeout(Math.random() * 3000 + 2000);
+    const page = await browser.newPage();
+    
+    // Set proxy if provided
+    if (proxy) {
+      await page.authenticate({
+        username: proxy.username,
+        password: proxy.password
+      });
+    }
+    
+    // Set user agent to mobile
+    await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1');
+    
+    // Go to TikTok login page
+    await page.goto('https://www.tiktok.com/login', { waitUntil: 'networkidle2' });
+    await page.waitForTimeout(3000);
+    
+    // Click on "Log in with email" option
+    const emailOption = await page.$('[data-e2e="login-email"]');
+    if (emailOption) {
+      await emailOption.click();
+      await page.waitForTimeout(2000);
+    }
+    
+    // Fill in username/email
+    await page.type('input[placeholder*="email" i]', username);
+    await page.waitForTimeout(1000);
+    
+    // Fill in password
+    await page.type('input[type="password"]', password);
+    await page.waitForTimeout(1000);
+    
+    // Click login button
+    const loginButton = await page.$('button[type="submit"]');
+    if (loginButton) {
+      await loginButton.click();
+      await page.waitForTimeout(5000);
+    }
+    
+    // Check if login successful
+    const profileIcon = await page.$('[data-e2e="profile-icon"]');
+    if (profileIcon) {
+      console.log('Login successful for:', username);
       
-      // Random like (30% chance)
-      if (Math.random() > 0.7) {
-        try {
-          await page.click('[data-e2e="like-icon"]');
+      // Get account stats
+      const stats = await getAccountStats(page);
+      
+      await page.close();
+      return { success: true, username, stats };
+    }
+    
+    await page.close();
+    return { success: false, message: 'Login failed' };
+    
+  } catch (error) {
+    console.error('Error logging into TikTok account:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+async function getAccountStats(page) {
+  try {
+    // Go to profile page
+    await page.goto('https://www.tiktok.com/@' + await getCurrentUsername(page), { waitUntil: 'networkidle2' });
+    await page.waitForTimeout(3000);
+    
+    // Extract follower count
+    const followerElement = await page.$('[data-e2e="follower-count"]');
+    const followers = followerElement ? await followerElement.textContent() : '0';
+    
+    // Extract following count
+    const followingElement = await page.$('[data-e2e="following-count"]');
+    const following = followingElement ? await followingElement.textContent() : '0';
+    
+    // Extract like count
+    const likeElement = await page.$('[data-e2e="like-count"]');
+    const likes = likeElement ? await likeElement.textContent() : '0';
+    
+    return {
+      followers: parseInt(followers.replace(/[^0-9]/g, '')) || 0,
+      following: parseInt(following.replace(/[^0-9]/g, '')) || 0,
+      likes: parseInt(likes.replace(/[^0-9]/g, '')) || 0
+    };
+  } catch (error) {
+    console.error('Error getting account stats:', error);
+    return { followers: 0, following: 0, likes: 0 };
+  }
+}
+
+async function getCurrentUsername(page) {
+  try {
+    const usernameElement = await page.$('[data-e2e="profile-username"]');
+    return usernameElement ? await usernameElement.textContent() : '';
+  } catch (error) {
+    return '';
+  }
+}
+
+async function postVideo(accountData, videoData) {
+  const { username, password } = accountData;
+  const { videoPath, caption, hashtags } = videoData;
+  
+  try {
+    const page = await browser.newPage();
+    
+    // Login first
+    const loginResult = await loginTikTokAccount({ username, password });
+    if (!loginResult.success) {
+      await page.close();
+      return { success: false, message: 'Login failed' };
+    }
+    
+    // Go to upload page
+    await page.goto('https://www.tiktok.com/upload', { waitUntil: 'networkidle2' });
+    await page.waitForTimeout(3000);
+    
+    // Upload video file
+    const fileInput = await page.$('input[type="file"]');
+    if (fileInput) {
+      await fileInput.uploadFile(videoPath);
+      await page.waitForTimeout(5000);
+    }
+    
+    // Add caption
+    if (caption) {
+      const captionInput = await page.$('[data-e2e="video-caption"]');
+      if (captionInput) {
+        await captionInput.type(caption);
+        await page.waitForTimeout(1000);
+      }
+    }
+    
+    // Add hashtags
+    if (hashtags) {
+      const hashtagInput = await page.$('[data-e2e="hashtag-input"]');
+      if (hashtagInput) {
+        await hashtagInput.type(hashtags);
+        await page.waitForTimeout(1000);
+      }
+    }
+    
+    // Click post button
+    const postButton = await page.$('[data-e2e="post-button"]');
+    if (postButton) {
+      await postButton.click();
+      await page.waitForTimeout(10000);
+    }
+    
+    await page.close();
+    return { success: true, message: 'Video posted successfully' };
+    
+  } catch (error) {
+    console.error('Error posting video:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+async function performWarmup(accountData) {
+  const { username, password } = accountData;
+  
+  try {
+    const page = await browser.newPage();
+    
+    // Login first
+    const loginResult = await loginTikTokAccount({ username, password });
+    if (!loginResult.success) {
+      await page.close();
+      return { success: false, message: 'Login failed' };
+    }
+    
+    // Go to For You page
+    await page.goto('https://www.tiktok.com/foryou', { waitUntil: 'networkidle2' });
+    await page.waitForTimeout(3000);
+    
+    // Scroll and like some videos (simulate human behavior)
+    for (let i = 0; i < 5; i++) {
+      // Scroll down
+      await page.evaluate(() => window.scrollBy(0, 500));
+      await page.waitForTimeout(2000);
+      
+      // Like video (50% chance)
+      if (Math.random() > 0.5) {
+        const likeButton = await page.$('[data-e2e="like-icon"]');
+        if (likeButton) {
+          await likeButton.click();
           await page.waitForTimeout(1000);
-        } catch (e) {
-          // Like button not found, continue
+        }
+      }
+      
+      // Comment occasionally (20% chance)
+      if (Math.random() > 0.8) {
+        const commentButton = await page.$('[data-e2e="comment-icon"]');
+        if (commentButton) {
+          await commentButton.click();
+          await page.waitForTimeout(1000);
+          
+          const commentInput = await page.$('[data-e2e="comment-input"]');
+          if (commentInput) {
+            const comments = ['Nice!', 'Great video!', 'Love this!', 'Amazing!', 'Keep it up!'];
+            const randomComment = comments[Math.floor(Math.random() * comments.length)];
+            await commentInput.type(randomComment);
+            await page.waitForTimeout(1000);
+            
+            const postButton = await page.$('[data-e2e="post-comment"]');
+            if (postButton) {
+              await postButton.click();
+              await page.waitForTimeout(2000);
+            }
+          }
         }
       }
     }
-    return true;
+    
+    await page.close();
+    return { success: true, message: 'Warmup completed successfully' };
+    
   } catch (error) {
-    console.error('Warm up error:', error);
-    return false;
+    console.error('Error during warmup:', error);
+    return { success: false, message: error.message };
   }
 }
 
-// API Routes
+// Routes
 app.get('/', (req, res) => {
-  res.send(dashboardHTML);
+  res.sendFile(__dirname + '/dashboard.html');
 });
 
 // Health check
@@ -165,7 +415,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Accounts API
+// Basic API Routes
 app.get('/api/accounts', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM accounts ORDER BY created_at DESC');
@@ -176,31 +426,20 @@ app.get('/api/accounts', async (req, res) => {
   }
 });
 
-app.post('/api/accounts', async (req, res) => {
+app.delete('/api/accounts/:id', async (req, res) => {
   try {
-    const { email, password, username, proxy_ip, proxy_port, proxy_username, proxy_password } = req.body;
-    
-    const result = await pool.query(
-      'INSERT INTO accounts (email, password, username, proxy_ip, proxy_port, proxy_username, proxy_password) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [email, password, username, proxy_ip, proxy_port, proxy_username, proxy_password]
-    );
-    
-    res.json(result.rows[0]);
+    const { id } = req.params;
+    await pool.query('DELETE FROM accounts WHERE id = $1', [id]);
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error creating account:', error);
+    console.error('Error deleting account:', error);
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-// Content Queue API
 app.get('/api/content', async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT cq.*, a.username 
-      FROM content_queue cq 
-      JOIN accounts a ON cq.account_id = a.id 
-      ORDER BY cq.scheduled_time ASC
-    `);
+    const result = await pool.query('SELECT * FROM content_queue ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching content:', error);
@@ -208,31 +447,20 @@ app.get('/api/content', async (req, res) => {
   }
 });
 
-app.post('/api/content', async (req, res) => {
+app.delete('/api/content/:id', async (req, res) => {
   try {
-    const { account_id, video_url, caption, hashtags, scheduled_time } = req.body;
-    
-    const result = await pool.query(
-      'INSERT INTO content_queue (account_id, video_url, caption, hashtags, scheduled_time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [account_id, video_url, caption, hashtags, scheduled_time]
-    );
-    
-    res.json(result.rows[0]);
+    const { id } = req.params;
+    await pool.query('DELETE FROM content_queue WHERE id = $1', [id]);
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error creating content:', error);
+    console.error('Error deleting content:', error);
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-// Tasks API
 app.get('/api/tasks', async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT t.*, a.username 
-      FROM tasks t 
-      JOIN accounts a ON t.account_id = a.id 
-      ORDER BY t.created_at DESC
-    `);
+    const result = await pool.query('SELECT * FROM tasks ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -240,13 +468,145 @@ app.get('/api/tasks', async (req, res) => {
   }
 });
 
-// Automation endpoints
-app.post('/api/automation/warm-up/:accountId', async (req, res) => {
+// Enhanced API Routes
+app.post('/api/accounts/create', async (req, res) => {
   try {
-    const { accountId } = req.params;
+    const { username, email, password, phone, category, proxy } = req.body;
     
-    // Get account details
-    const accountResult = await pool.query('SELECT * FROM accounts WHERE id = $1', [accountId]);
+    // Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Username, email, and password are required' });
+    }
+    
+    // Check if account already exists
+    const existingAccount = await pool.query(
+      'SELECT id FROM accounts WHERE username = $1 OR email = $2',
+      [username, email]
+    );
+    
+    if (existingAccount.rows.length > 0) {
+      return res.status(400).json({ error: 'Account already exists' });
+    }
+    
+    // Create TikTok account
+    const createResult = await createTikTokAccount({ username, email, password, phone, proxy });
+    
+    if (createResult.success) {
+      // Save to database
+      const result = await pool.query(
+        'INSERT INTO accounts (username, email, password, category, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [username, email, password, category, 'active']
+      );
+      
+      res.json({
+        success: true,
+        message: 'TikTok account created successfully',
+        account: result.rows[0]
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: createResult.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error creating account:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/accounts/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    // Get account from database
+    const accountResult = await pool.query(
+      'SELECT * FROM accounts WHERE username = $1 OR email = $1',
+      [username]
+    );
+    
+    if (accountResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+    
+    const account = accountResult.rows[0];
+    
+    // Try to login to TikTok
+    const loginResult = await loginTikTokAccount({ username: account.username, password: account.password });
+    
+    if (loginResult.success) {
+      // Update last activity
+      await pool.query(
+        'UPDATE accounts SET last_activity = CURRENT_TIMESTAMP WHERE id = $1',
+        [account.id]
+      );
+      
+      res.json({
+        success: true,
+        message: 'Login successful',
+        account: { ...account, stats: loginResult.stats }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: loginResult.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/content/post', async (req, res) => {
+  try {
+    const { account_id, video_path, caption, hashtags } = req.body;
+    
+    // Get account from database
+    const accountResult = await pool.query('SELECT * FROM accounts WHERE id = $1', [account_id]);
+    
+    if (accountResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+    
+    const account = accountResult.rows[0];
+    
+    // Post video to TikTok
+    const postResult = await postVideo(account, { video_path, caption, hashtags });
+    
+    if (postResult.success) {
+      // Update content status
+      await pool.query(
+        'UPDATE content_queue SET status = $1 WHERE account_id = $2 AND status = $3',
+        ['posted', account_id, 'pending']
+      );
+      
+      res.json({
+        success: true,
+        message: 'Video posted successfully'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: postResult.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error posting video:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/automation/warmup', async (req, res) => {
+  try {
+    const { account_id } = req.body;
+    
+    // Get account from database
+    const accountResult = await pool.query('SELECT * FROM accounts WHERE id = $1', [account_id]);
+    
     if (accountResult.rows.length === 0) {
       return res.status(404).json({ error: 'Account not found' });
     }
@@ -254,15 +614,42 @@ app.post('/api/automation/warm-up/:accountId', async (req, res) => {
     const account = accountResult.rows[0];
     
     // Create task
-    await pool.query(
-      'INSERT INTO tasks (account_id, task_type, task_data) VALUES ($1, $2, $3)',
-      [accountId, 'warm_up', { duration: '20_minutes' }]
+    const taskResult = await pool.query(
+      'INSERT INTO tasks (account_id, task_type, status) VALUES ($1, $2, $3) RETURNING *',
+      [account_id, 'warmup', 'pending']
     );
     
-    res.json({ message: 'Warm-up task created', accountId });
+    // Perform warmup
+    const warmupResult = await performWarmup(account);
+    
+    if (warmupResult.success) {
+      // Update task status
+      await pool.query(
+        'UPDATE tasks SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['completed', taskResult.rows[0].id]
+      );
+      
+      res.json({
+        success: true,
+        message: 'Warmup completed successfully',
+        task: taskResult.rows[0]
+      });
+    } else {
+      // Update task status
+      await pool.query(
+        'UPDATE tasks SET status = $1 WHERE id = $2',
+        ['failed', taskResult.rows[0].id]
+      );
+      
+      res.status(400).json({
+        success: false,
+        message: warmupResult.message
+      });
+    }
+    
   } catch (error) {
-    console.error('Error creating warm-up task:', error);
-    res.status(500).json({ error: 'Task creation error' });
+    console.error('Error during warmup:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

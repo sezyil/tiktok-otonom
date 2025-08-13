@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Orchestrator Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .stat-card h3 { color: #333; margin-bottom: 10px; }
+        .stat-card .number { font-size: 2em; font-weight: bold; color: #667eea; }
+        .section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .section h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .btn { background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+        .btn:hover { background: #5a6fd8; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .table th { background: #f8f9fa; font-weight: bold; }
+        .status-active { color: #27ae60; font-weight: bold; }
+        .status-pending { color: #f39c12; font-weight: bold; }
+        .status-error { color: #e74c3c; font-weight: bold; }
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: #f8f9fa; border: none; cursor: pointer; border-radius: 5px 5px 0 0; margin-right: 5px; }
+        .tab.active { background: #667eea; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .alert { padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 TikTok Orchestrator</h1>
+            <p>Phone Farm Management Dashboard</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Toplam Hesap</h3>
+                <div class="number" id="totalAccounts">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Bekleyen İçerik</h3>
+                <div class="number" id="pendingContent">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Aktif Görevler</h3>
+                <div class="number" id="activeTasks">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Risk Skoru</h3>
+                <div class="number" id="avgRiskScore">0</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('accounts')">Hesaplar</button>
+            <button class="tab" onclick="showTab('content')">İçerik</button>
+            <button class="tab" onclick="showTab('automation')">Otomasyon</button>
+            <button class="tab" onclick="showTab('analytics')">Analitik</button>
+        </div>
+
+        <div id="accounts" class="tab-content active">
+            <div class="section">
+                <h2>🎯 TikTok Hesabı Oluştur</h2>
+                <form id="accountForm">
+                    <div class="form-group">
+                        <label>Kullanıcı Adı:</label>
+                        <input type="text" id="username" required placeholder="benzersiz_kullanici_adi">
+                    </div>
+                    <div class="form-group">
+                        <label>E-posta:</label>
+                        <input type="email" id="email" required placeholder="email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Şifre:</label>
+                        <input type="password" id="password" required placeholder="güçlü_şifre">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefon (Opsiyonel):</label>
+                        <input type="tel" id="phone" placeholder="+90 555 123 4567">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori:</label>
+                        <select id="category">
+                            <option value="lifestyle">Lifestyle</option>
+                            <option value="fitness">Fitness</option>
+                            <option value="food">Food</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="education">Education</option>
+                            <option value="tech">Tech</option>
+                            <option value="beauty">Beauty</option>
+                            <option value="gaming">Gaming</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">🚀 TikTok Hesabı Oluştur</button>
+                </form>
+                <div id="accountLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>TikTok hesabı oluşturuluyor...</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 Hesap Listesi</h2>
+                <div id="accountsList"></div>
+            </div>
+        </div>
+
+        <div id="content" class="tab-content">
+            <div class="section">
+                <h2>📹 Video Paylaş</h2>
+                <form id="contentForm">
+                    <div class="form-group">
+                        <label>Hesap Seç:</label>
+                        <select id="contentAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Video Dosyası:</label>
+                        <input type="file" id="videoFile" accept="video/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Başlık:</label>
+                        <input type="text" id="contentTitle" required placeholder="Video başlığı">
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama:</label>
+                        <textarea id="contentDescription" rows="3" placeholder="Video açıklaması"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Hashtag'ler:</label>
+                        <input type="text" id="hashtags" placeholder="#trending #viral #fun">
+                    </div>
+                    <button type="submit" class="btn">📤 TikTok'a Yükle</button>
+                </form>
+                <div id="contentLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Video TikTok'a yükleniyor...</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 İçerik Kuyruğu</h2>
+                <div id="contentList"></div>
+            </div>
+        </div>
+
+        <div id="automation" class="tab-content">
+            <div class="section">
+                <h2>🤖 Otomasyon Kontrolleri</h2>
+                <div class="form-group">
+                    <label>Hesap Seç:</label>
+                    <select id="automationAccount"></select>
+                </div>
+                <button onclick="startWarmup()" class="btn btn-success">🔥 Warm-up Başlat</button>
+                <button onclick="startPosting()" class="btn btn-success">📤 Otomatik Paylaşım</button>
+                <button onclick="startEngagement()" class="btn btn-success">❤️ Etkileşim Başlat</button>
+                <div id="automationLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Otomasyon çalışıyor...</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Aktif Görevler</h2>
+                <div id="tasksList"></div>
+            </div>
+        </div>
+
+        <div id="analytics" class="tab-content">
+            <div class="section">
+                <h2>📈 Performans Analizi</h2>
+                <div id="analyticsContent">
+                    <p>Analitik veriler burada görüntülenecek...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAccounts();
+            loadContent();
+            loadTasks();
+            updateStats();
+        });
+
+        // Account form submission
+        document.getElementById('accountForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('accountLoading');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                phone: document.getElementById('phone').value,
+                category: document.getElementById('category').value
+            };
+
+            try {
+                const response = await fetch('/api/accounts/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('🎉 TikTok hesabı başarıyla oluşturuldu!', 'success');
+                    document.getElementById('accountForm').reset();
+                    loadAccounts();
+                    updateStats();
+                } else {
+                    showAlert('❌ Hesap oluşturulurken hata: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası!', 'error');
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Content form submission
+        document.getElementById('contentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('contentLoading');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('account_id', document.getElementById('contentAccount').value);
+            formData.append('video_file', document.getElementById('videoFile').files[0]);
+            formData.append('title', document.getElementById('contentTitle').value);
+            formData.append('description', document.getElementById('contentDescription').value);
+            formData.append('hashtags', document.getElementById('hashtags').value);
+
+            try {
+                const response = await fetch('/api/content/post', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('🎉 Video başarıyla TikTok\'a yüklendi!', 'success');
+                    document.getElementById('contentForm').reset();
+                    loadContent();
+                    updateStats();
+                } else {
+                    showAlert('❌ Video yüklenirken hata: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası!', 'error');
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Load accounts
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const accounts = await response.json();
+                
+                const accountsList = document.getElementById('accountsList');
+                const accountSelects = document.querySelectorAll('#contentAccount, #automationAccount');
+                
+                if (accounts.length === 0) {
+                    accountsList.innerHTML = '<p>Henüz hesap eklenmemiş.</p>';
+                    accountSelects.forEach(select => select.innerHTML = '<option value="">Hesap seçin</option>');
+                    return;
+                }
+
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Kullanıcı Adı</th><th>Kategori</th><th>Durum</th><th>Risk Skoru</th><th>Son Aktivite</th><th>İşlemler</th></tr></thead><tbody>';
+                let selectOptions = '<option value="">Hesap seçin</option>';
+                
+                accounts.forEach(account => {
+                    html += \`
+                        <tr>
+                            <td>\${account.id}</td>
+                            <td>\${account.username}</td>
+                            <td>\${account.category}</td>
+                            <td><span class="status-\${account.status}">\${account.status}</span></td>
+                            <td>\${account.risk_score}</td>
+                            <td>\${new Date(account.last_activity).toLocaleString('tr-TR')}</td>
+                            <td>
+                                <button onclick="testLogin(\${account.id})" class="btn btn-success">🔐 Test</button>
+                                <button onclick="deleteAccount(\${account.id})" class="btn btn-danger">🗑️ Sil</button>
+                            </td>
+                        </tr>
+                    \`;
+                    selectOptions += \`<option value="\${account.id}">\${account.username} (\${account.category})</option>\`;
+                });
+                
+                html += '</tbody></table>';
+                accountsList.innerHTML = html;
+                
+                accountSelects.forEach(select => select.innerHTML = selectOptions);
+            } catch (error) {
+                console.error('Hesaplar yüklenirken hata:', error);
+            }
+        }
+
+        // Test login
+        async function testLogin(accountId) {
+            try {
+                const response = await fetch('/api/accounts/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: accountId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✅ Giriş başarılı! Hesap aktif.', 'success');
+                    loadAccounts();
+                } else {
+                    showAlert('❌ Giriş başarısız: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Test sırasında hata!', 'error');
+            }
+        }
+
+        // Load content
+        async function loadContent() {
+            try {
+                const response = await fetch('/api/content');
+                const content = await response.json();
+                
+                const contentList = document.getElementById('contentList');
+                
+                if (content.length === 0) {
+                    contentList.innerHTML = '<p>Henüz içerik eklenmemiş.</p>';
+                    return;
+                }
+
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Başlık</th><th>Kategori</th><th>Durum</th><th>Hesap</th><th>Oluşturulma</th><th>İşlemler</th></tr></thead><tbody>';
+                
+                content.forEach(item => {
+                    html += \`
+                        <tr>
+                            <td>\${item.id}</td>
+                            <td>\${item.title}</td>
+                            <td>\${item.category}</td>
+                            <td><span class="status-\${item.status}">\${item.status}</span></td>
+                            <td>\${item.account_id || 'Atanmamış'}</td>
+                            <td>\${new Date(item.created_at).toLocaleString('tr-TR')}</td>
+                            <td>
+                                <button onclick="deleteContent(\${item.id})" class="btn btn-danger">🗑️ Sil</button>
+                            </td>
+                        </tr>
+                    \`;
+                });
+                
+                html += '</tbody></table>';
+                contentList.innerHTML = html;
+            } catch (error) {
+                console.error('İçerik yüklenirken hata:', error);
+            }
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                const tasks = await response.json();
+                
+                const tasksList = document.getElementById('tasksList');
+                
+                if (tasks.length === 0) {
+                    tasksList.innerHTML = '<p>Aktif görev yok.</p>';
+                    return;
+                }
+
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Görev Tipi</th><th>Hesap</th><th>Durum</th><th>Oluşturulma</th><th>Tamamlanma</th></tr></thead><tbody>';
+                
+                tasks.forEach(task => {
+                    html += \`
+                        <tr>
+                            <td>\${task.id}</td>
+                            <td>\${task.task_type}</td>
+                            <td>\${task.account_id}</td>
+                            <td><span class="status-\${task.status}">\${task.status}</span></td>
+                            <td>\${new Date(task.created_at).toLocaleString('tr-TR')}</td>
+                            <td>\${task.completed_at ? new Date(task.completed_at).toLocaleString('tr-TR') : '-'}</td>
+                        </tr>
+                    \`;
+                });
+                
+                html += '</tbody></table>';
+                tasksList.innerHTML = html;
+            } catch (error) {
+                console.error('Görevler yüklenirken hata:', error);
+            }
+        }
+
+        // Update stats
+        async function updateStats() {
+            try {
+                const [accountsRes, contentRes, tasksRes] = await Promise.all([
+                    fetch('/api/accounts'),
+                    fetch('/api/content'),
+                    fetch('/api/tasks')
+                ]);
+                
+                const accounts = await accountsRes.json();
+                const content = await contentRes.json();
+                const tasks = await tasksRes.json();
+                
+                document.getElementById('totalAccounts').textContent = accounts.length;
+                document.getElementById('pendingContent').textContent = content.filter(c => c.status === 'pending').length;
+                document.getElementById('activeTasks').textContent = tasks.filter(t => t.status === 'pending').length;
+                
+                const avgRisk = accounts.length > 0 ? 
+                    Math.round(accounts.reduce((sum, acc) => sum + acc.risk_score, 0) / accounts.length) : 0;
+                document.getElementById('avgRiskScore').textContent = avgRisk;
+            } catch (error) {
+                console.error('İstatistikler güncellenirken hata:', error);
+            }
+        }
+
+        // Automation functions
+        async function startWarmup() {
+            const accountId = document.getElementById('automationAccount').value;
+            if (!accountId) {
+                showAlert('❌ Lütfen bir hesap seçin!', 'error');
+                return;
+            }
+
+            const loading = document.getElementById('automationLoading');
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/automation/warmup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: parseInt(accountId) })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('🔥 Warm-up başlatıldı!', 'success');
+                    loadTasks();
+                    updateStats();
+                } else {
+                    showAlert('❌ Warm-up başlatılırken hata: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası!', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function startPosting() {
+            showAlert('📤 Otomatik paylaşım özelliği yakında eklenecek!', 'success');
+        }
+
+        async function startEngagement() {
+            showAlert('❤️ Etkileşim özelliği yakında eklenecek!', 'success');
+        }
+
+        // Delete functions
+        async function deleteAccount(id) {
+            if (!confirm('Bu hesabı silmek istediğinizden emin misiniz?')) return;
+            
+            try {
+                const response = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showAlert('🗑️ Hesap silindi!', 'success');
+                    loadAccounts();
+                    updateStats();
+                } else {
+                    showAlert('❌ Hesap silinirken hata oluştu!', 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası!', 'error');
+            }
+        }
+
+        async function deleteContent(id) {
+            if (!confirm('Bu içeriği silmek istediğinizden emin misiniz?')) return;
+            
+            try {
+                const response = await fetch(`/api/content/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showAlert('🗑️ İçerik silindi!', 'success');
+                    loadContent();
+                    updateStats();
+                } else {
+                    showAlert('❌ İçerik silinirken hata oluştu!', 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Bağlantı hatası!', 'error');
+            }
+        }
+
+        // Utility functions
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.stats'));
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>
