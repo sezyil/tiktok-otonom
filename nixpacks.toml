@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "chromium", "postgresql"]
+
+[phases.install]
+cmds = ["npm ci --only=production"]
+
+[phases.build]
+cmds = ["echo 'Build complete'"]
+
+[start]
+cmd = "node server.js"
