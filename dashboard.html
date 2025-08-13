@@ -133,8 +133,17 @@
                         <select id="contentAccount" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Video Dosyası:</label>
-                        <input type="file" id="videoFile" accept="video/*" required>
+                        <label>Kategori:</label>
+                        <select id="contentCategory">
+                            <option value="lifestyle">Lifestyle</option>
+                            <option value="fitness">Fitness</option>
+                            <option value="food">Food</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="education">Education</option>
+                            <option value="tech">Tech</option>
+                            <option value="beauty">Beauty</option>
+                            <option value="gaming">Gaming</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Başlık:</label>
@@ -277,28 +286,30 @@
             loading.style.display = 'block';
             submitBtn.disabled = true;
             
-            const formData = new FormData();
-            formData.append('account_id', document.getElementById('contentAccount').value);
-            formData.append('video_file', document.getElementById('videoFile').files[0]);
-            formData.append('title', document.getElementById('contentTitle').value);
-            formData.append('description', document.getElementById('contentDescription').value);
-            formData.append('hashtags', document.getElementById('hashtags').value);
+            const formData = {
+                account_id: document.getElementById('contentAccount').value,
+                title: document.getElementById('contentTitle').value,
+                description: document.getElementById('contentDescription').value,
+                category: document.getElementById('contentCategory').value,
+                hashtags: document.getElementById('hashtags').value
+            };
 
             try {
                 const response = await fetch('/api/content/post', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('Video başarıyla TikTok\'a yüklendi!', 'success');
+                    showAlert('İçerik başarıyla eklendi!', 'success');
                     document.getElementById('contentForm').reset();
                     loadContent();
                     updateStats();
                 } else {
-                    showAlert('Video yüklenirken hata: ' + result.message, 'error');
+                    showAlert('İçerik eklenirken hata: ' + result.message, 'error');
                 }
             } catch (error) {
                 showAlert('Bağlantı hatası!', 'error');

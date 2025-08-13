@@ -479,7 +479,7 @@ app.get('/api/tasks', async (req, res) => {
 // Enhanced API Routes
 app.post('/api/accounts/create', async (req, res) => {
   try {
-    const { username, email, password, phone, category, proxy } = req.body;
+    const { username, email, password, phone, category } = req.body;
     
     // Validate required fields
     if (!username || !email || !password) {
@@ -496,27 +496,17 @@ app.post('/api/accounts/create', async (req, res) => {
       return res.status(400).json({ error: 'Account already exists' });
     }
     
-    // Create TikTok account
-    const createResult = await createTikTokAccount({ username, email, password, phone, proxy });
+    // Save to database (simulated TikTok account creation)
+    const result = await pool.query(
+      'INSERT INTO accounts (username, email, password, category, status, risk_score) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [username, email, password, category, 'active', Math.floor(Math.random() * 10)]
+    );
     
-    if (createResult.success) {
-      // Save to database
-      const result = await pool.query(
-        'INSERT INTO accounts (username, email, password, category, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [username, email, password, category, 'active']
-      );
-      
-      res.json({
-        success: true,
-        message: 'TikTok account created successfully',
-        account: result.rows[0]
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: createResult.message
-      });
-    }
+    res.json({
+      success: true,
+      message: 'Account created successfully (simulated)',
+      account: result.rows[0]
+    });
     
   } catch (error) {
     console.error('Error creating account:', error);
@@ -540,27 +530,24 @@ app.post('/api/accounts/login', async (req, res) => {
     
     const account = accountResult.rows[0];
     
-    // Try to login to TikTok
-    const loginResult = await loginTikTokAccount({ username: account.username, password: account.password });
+    // Simulate login success
+    await pool.query(
+      'UPDATE accounts SET last_activity = CURRENT_TIMESTAMP WHERE id = $1',
+      [account.id]
+    );
     
-    if (loginResult.success) {
-      // Update last activity
-      await pool.query(
-        'UPDATE accounts SET last_activity = CURRENT_TIMESTAMP WHERE id = $1',
-        [account.id]
-      );
-      
-      res.json({
-        success: true,
-        message: 'Login successful',
-        account: { ...account, stats: loginResult.stats }
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: loginResult.message
-      });
-    }
+    res.json({
+      success: true,
+      message: 'Login successful (simulated)',
+      account: { 
+        ...account, 
+        stats: {
+          followers: Math.floor(Math.random() * 1000),
+          following: Math.floor(Math.random() * 500),
+          likes: Math.floor(Math.random() * 5000)
+        }
+      }
+    });
     
   } catch (error) {
     console.error('Error logging in:', error);
@@ -570,7 +557,7 @@ app.post('/api/accounts/login', async (req, res) => {
 
 app.post('/api/content/post', async (req, res) => {
   try {
-    const { account_id, video_path, caption, hashtags } = req.body;
+    const { account_id, title, description, category, hashtags } = req.body;
     
     // Get account from database
     const accountResult = await pool.query('SELECT * FROM accounts WHERE id = $1', [account_id]);
@@ -579,31 +566,20 @@ app.post('/api/content/post', async (req, res) => {
       return res.status(404).json({ error: 'Account not found' });
     }
     
-    const account = accountResult.rows[0];
+    // Save content to database
+    const result = await pool.query(
+      'INSERT INTO content_queue (title, description, category, account_id, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [title, description, category, account_id, 'posted']
+    );
     
-    // Post video to TikTok
-    const postResult = await postVideo(account, { video_path, caption, hashtags });
-    
-    if (postResult.success) {
-      // Update content status
-      await pool.query(
-        'UPDATE content_queue SET status = $1 WHERE account_id = $2 AND status = $3',
-        ['posted', account_id, 'pending']
-      );
-      
-      res.json({
-        success: true,
-        message: 'Video posted successfully'
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: postResult.message
-      });
-    }
+    res.json({
+      success: true,
+      message: 'Content posted successfully (simulated)',
+      content: result.rows[0]
+    });
     
   } catch (error) {
-    console.error('Error posting video:', error);
+    console.error('Error posting content:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -619,45 +595,44 @@ app.post('/api/automation/warmup', async (req, res) => {
       return res.status(404).json({ error: 'Account not found' });
     }
     
-    const account = accountResult.rows[0];
-    
     // Create task
     const taskResult = await pool.query(
       'INSERT INTO tasks (account_id, task_type, status) VALUES ($1, $2, $3) RETURNING *',
-      [account_id, 'warmup', 'pending']
+      [account_id, 'warmup', 'completed']
     );
     
-    // Perform warmup
-    const warmupResult = await performWarmup(account);
+    // Simulate warmup completion
+    await pool.query(
+      'UPDATE accounts SET risk_score = GREATEST(0, risk_score - 2) WHERE id = $1',
+      [account_id]
+    );
     
-    if (warmupResult.success) {
-      // Update task status
-      await pool.query(
-        'UPDATE tasks SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE id = $2',
-        ['completed', taskResult.rows[0].id]
-      );
-      
-      res.json({
-        success: true,
-        message: 'Warmup completed successfully',
-        task: taskResult.rows[0]
-      });
-    } else {
-      // Update task status
-      await pool.query(
-        'UPDATE tasks SET status = $1 WHERE id = $2',
-        ['failed', taskResult.rows[0].id]
-      );
-      
-      res.status(400).json({
-        success: false,
-        message: warmupResult.message
-      });
-    }
+    res.json({
+      success: true,
+      message: 'Warmup completed successfully (simulated)',
+      task: taskResult.rows[0]
+    });
     
   } catch (error) {
     console.error('Error during warmup:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add content endpoint
+app.post('/api/content', async (req, res) => {
+  try {
+    const { title, description, category, account_id } = req.body;
+    
+    const result = await pool.query(
+      'INSERT INTO content_queue (title, description, category, account_id, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [title, description, category, account_id, 'pending']
+    );
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating content:', error);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
