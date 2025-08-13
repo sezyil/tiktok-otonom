@@ -71,10 +71,10 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('accounts')">Hesaplar</button>
-            <button class="tab" onclick="showTab('content')">İçerik</button>
-            <button class="tab" onclick="showTab('automation')">Otomasyon</button>
-            <button class="tab" onclick="showTab('analytics')">Analitik</button>
+            <button class="tab active" onclick="showTab('accounts', this)">Hesaplar</button>
+            <button class="tab" onclick="showTab('content', this)">İçerik</button>
+            <button class="tab" onclick="showTab('automation', this)">Otomasyon</button>
+            <button class="tab" onclick="showTab('analytics', this)">Analitik</button>
         </div>
 
         <div id="accounts" class="tab-content active">
@@ -196,7 +196,7 @@
 
     <script>
         // Tab switching
-        function showTab(tabName) {
+        function showTab(tabName, clickedElement) {
             // Hide all tab contents
             const tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(content => {
@@ -213,7 +213,7 @@
             document.getElementById(tabName).classList.add('active');
             
             // Add active class to clicked tab
-            event.target.classList.add('active');
+            clickedElement.classList.add('active');
         }
 
         // Load data on page load
